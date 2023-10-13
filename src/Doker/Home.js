@@ -6,7 +6,9 @@ import { getDockerData } from '../Redux/Auth/action'//APi Redux function import
 import "./header.css";
 import axios from 'axios';
 
+
 export const Home = ({ getDockerData }, props) => {
+
 
   const [popupVisible, setPopupVisible] = useState(false);
   const [activePopup, setActivePopup] = useState(null);
@@ -30,14 +32,51 @@ export const Home = ({ getDockerData }, props) => {
   // UPload Folder
   const [selectedFolder, setSelectedFolder] = useState(null);
 
-  const handleFolderChange = (event) => {
-    const folder = event.target.files[0];
-    console.log("folder", folder);
-    if (folder && folder.webkitRelativePath) {
-      const folderPath = folder.webkitRelativePath.split('/')[0];
-      setSelectedFolder(folderPath);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedSpecificFile, setSelectedSpecificFile] = useState(null);
+
+  const handleFileUpload = (event) => {
+    const files = event.target.files;
+
+    if (files && files.length > 0) {
+      setSelectedFiles([...selectedFiles, ...Array.from(files)]);
     }
   };
+
+  const handleSpecificFileUpload = (event) => {
+    const file = event.target.files[0];
+
+    if (file) {
+      setSelectedSpecificFile(file);
+    }
+  };
+
+
+
+  const convertHandler = () => {
+
+    // var folder = { folder: files };
+
+    // console.log(folder)
+
+    // setSelectedFolder(folder)
+
+    // for (const file of files) {
+    //   if (file.webkitRelativePath) {
+    //     console.log('File Name:', file.name);
+    //     console.log('File Type:', file.type);
+
+
+    //     //Upload APi Files Here if you want to upload one by one (file)
+
+    //   }
+    // }
+
+
+    //Upload Files Here if you want to upload all at once (files)
+
+  };
+
 
   // LIst of Images  ----------------------
   const [runPopupVisible, setRunPopupVisible] = useState({ isopen: false, id: "" });
@@ -78,15 +117,16 @@ export const Home = ({ getDockerData }, props) => {
 
 
   }
-  
+
   const pushtoHub = () => {
-//  Call api here
+    //  Call api here
 
 
   }
 
   // List of Images cards desigs {create image}
-  const PopUpMenu = (key, card) => {
+  const PopUpMenu = (key, index) => {
+
     return (
       <div className=" h-4/6 w-4/6 m-1 card-bg-color  flex flex-col justify-center" id={"card_" + key}>
         {/* <label className='text-teal-400 text-right text-sm pr-4'> {running === "card_" + key ? 'Running' : 'Not Running'} </label> */}
@@ -107,12 +147,12 @@ export const Home = ({ getDockerData }, props) => {
             >
               <li>
                 <button
-                  onClick={() => handlecontainer('Inspect')}
+                  onClick={() => handlecontainer('Inspect', key)}
                   className="block px-4 py-2 bg-gray-600 hover:bg-gray-500  hover:text-white w-full text-left" > Inspect  </button>
               </li>
               <li>
                 <button
-                  onClick={() => handlecontainer('logs')}
+                  onClick={() => handlecontainer('logs', key)}
                   className="block px-4 py-2 bg-gray-600  hover:bg-gray-500 hover:text-white w-full text-left" > logs
                 </button>
               </li>
@@ -153,21 +193,18 @@ export const Home = ({ getDockerData }, props) => {
       </div>
     );
   }
-
+  const [backendData, setBackendData] = useState([{}])
   // test api calls  =======================
   useEffect(() => {
-    // setData(JsosData)
-    // const apiUrl = 'https://api.example.com/data';
-    const apiUrl = 'http://127.0.0.1:2375/container-list';
-    axios.get(apiUrl)
-      .then((response) => {
-        // Handle the successful response here
-        console.log('Response Data:', response.data);
-      })
-      .catch((error) => {
-        // Handle any errors that occur during the request
-        console.error('Request Error:', error);
-      });
+
+
+    fetch("/api").then(
+      response => response.json()
+    ).then(
+      data => {
+        setBackendData(data)
+      }
+    )
     // getDockerData()
 
   }, [])
@@ -193,19 +230,30 @@ export const Home = ({ getDockerData }, props) => {
   const [inspectPopup, setInspectPopup] = useState(false);
 
   // Network Inspect
-  const handleOptionSelect = (option) => {
+  const handleOptionSelect = (option, index) => {
     setSelectedOption(option);
-    setIsDropdownOpen(false);
 
+    // const filteredData = networkData.filter((item) =>
+    //   item.index === index
+    // );
+    // setnetInspectpop(filteredData)
+
+    setIsDropdownOpen(false);
     if (option === 'Inspect') {
       setInspectPopup(true);
     }
   };
 
   // Containers logs/inspect
-  const handlecontainer = (option) => {
+  const handlecontainer = (option, index) => {
     setSelectedOption(option);
+
     setIsDropdownOpen(false)
+    const filteredData = networkData.filter((item) =>
+      item.index === index
+    );
+    setnetInspectpop(filteredData)
+
 
   };
 
@@ -215,10 +263,16 @@ export const Home = ({ getDockerData }, props) => {
 
   // create network Popup
   const [networkname, setnetworkname] = useState('');
+  // const [filteredData, setFilteredData] = useState(JsonData); // Initialize with your full data
+  const [networkData, setnetworkData] = useState(JsonData);
+  const [netInspectpop, setnetInspectpop] = useState(JsonData);
   const [networksPopup, setNetworksPopup] = useState(false);
 
+
   const NetworkPopupOpen = (popupCardNetwork) => {
-    console.log("popupName", popupCardNetwork);
+    setNetworksPopup(false)
+    // apply api here create network
+
     if (activePopup === 'networkPopup') {
       setPopupCardNetwork(true)
     }
@@ -285,36 +339,15 @@ export const Home = ({ getDockerData }, props) => {
 
 
 
-        {networksPopup ? (
-          <div style={{ left: ' 249%' }} className=" popup h-52 w-80 items-center ">
+        {networksPopup &&
+          <div style={{ left: ' 260%' }} className=" popup h-52 w-80 items-center ">
             <label className='text-white text-center items-center'>Network Created Succesfully! </label>
-            <button className="mt-8 w-40 bg-teal-400 hover:bg-teal-300 font-bold py-1 px-4 rounded  items-center" onClick={() => setNetworksPopup(false)}>
+            <button className="mt-8 w-40 bg-teal-400 hover:bg-teal-300 font-bold py-1 px-4 rounded  items-center" onClick={() => NetworkPopupOpen()}>
               ok
             </button>
           </div>
-        ) : ''}
+        }
         {/* uplad image */}
-        {/* {Uploadpopup ? (
-          <div style={{ left: ' 249%' }} className=" popup h-52 w-80 items-center ">
-            <label className='text-white text-center items-center'>Upload the file to convert it into an Image</label>
-            <button className="mt-8 w-40 bg-teal-400 hover:bg-teal-300 font-bold py-1 px-4 rounded  items-center" onClick={() => setPopupVisible(false)}>
-              Upload
-            </button>
-            <div>
-              <input type="file" webkitdirectory="" onChange={handleFolderChange} />
-              {selectedFolder && (
-                <div>
-                  <h4>Selected Folder Location:</h4>
-                  <p>{selectedFolder}</p>
-                  {selectedFolder}
-                </div>
-              )}
-            </div>
-
-          </div>
-        ) : ''} */}
-        {/* {networksPopup ? */}
-
 
         <div className="w-full absolute bottom-0 mt-12 bg-teal-400 flex justify-center p-2">
           {/* <img src={logo} className="bottom-img shadow self-center" alt="img" /> */}
@@ -332,241 +365,187 @@ export const Home = ({ getDockerData }, props) => {
             {popupCardNetwork &&
               <div style={{ width: '300px' }} id='pop1' className="p-2 absolute  popup-main  shadow rounded overflow-y-scroll scrollbar  scrollbar-thin  scrollbar-thumb-gray-900 scrollbar-track-gray-500 ">
                 <div className='flex justify-between mb-2'>
-
                   <button className='bg-gray-400 rounded hover:bg-gray-500 px-2 w-9/12 '>Remove Unused Networks</button>
                   {/* <button onClick={() => { setPopupCardNetwork(false) }} className='bg-gray-600 hover:bg-gray-500 p-1 rounded '>X </button> */}
                   <button onClick={() => { setPopupCardNetwork(false) }} className='bg-gray-400 px-2 rounded'>X</button>
-
                 </div>
-                {/* Add more cards as needed */}
-                <div className=" flex bg-gray-700 p-4 items-center justify-between" id='0'
-                // onDragStart={(e) => handleDragStart(e, '0')}
-                >
-                  <div className='flex justify-center ml-3 py-2'>
-                    <svg className='ml-2' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                    </svg>
-                    <label className='ml-3 text-white text-md font-semibold'>Network Name</label>
-                  </div>
+                {/* Apply map loop here for hetwork cards "Start" */}
 
-                  <div className="relative inline-block text-left">
-                    <div className="inline-block relative">
-                      <button
-                        onClick={() => toggleDropdown(1)}
-                        type="button"
-                      // className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                      >
+                {networkData?.map((x, index) => (
 
-                        <svg width="5" height="17" viewBox="0 0 5 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect width="4.04709" height="4.04709" rx="2.02354" fill="#F2F2F2" />
-                          <rect y="6.47754" width="4.04709" height="4.04709" rx="2.02354" fill="#F2F2F2" />
-                          <rect y="12.9531" width="4.04709" height="4.04709" rx="2.02354" fill="#F2F2F2" />
-                        </svg>
-                      </button>
-                      <ul onMouseLeave={() => setIsDropdownOpen(false)}
-                        className={`${isDropdownOpen === 1 ? '' : 'hidden'
-                          } absolute right-0 z-10 mt-2 bg-white divide-y divide-gray-100 rounded-lg shadow`}
-                      >
-                        <li>
-                          <button
-                            onClick={() => handleOptionSelect('Inspect')}
-                            className="block px-4 py-2 bg-gray-600 hover:bg-gray-500  hover:text-white w-full text-left" > Inspect </button>
-                        </li>
-                        <li>
-                          <button
-                            onClick={() => handleOptionSelect('Delete')}
-                            className="block px-4 py-2 bg-gray-600  hover:bg-gray-500 hover:text-white w-full text-left" > Remove Network
-                          </button>
-                        </li>
-                      </ul>
+                  <div key={index} className=" flex bg-gray-700 p-4 items-center justify-between" id='0'
+                  // onDragStart={(e) => handleDragStart(e, '0')}
+                  >
+                    <div className='flex justify-center ml-3 py-2'>
+                      <svg className='ml-2' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
+                      </svg>
+                      <label className='ml-3 text-white text-md font-semibold'> {x.networkname}</label>
+                    </div>
+
+                    <div className="relative inline-block text-left">
+                      <div className="inline-block relative">
+                        <button
+                          onClick={() => toggleDropdown(index)}
+                          type="button"
+                        // className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                        >
+
+                          <svg width="5" height="17" viewBox="0 0 5 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="4.04709" height="4.04709" rx="2.02354" fill="#F2F2F2" />
+                            <rect y="6.47754" width="4.04709" height="4.04709" rx="2.02354" fill="#F2F2F2" />
+                            <rect y="12.9531" width="4.04709" height="4.04709" rx="2.02354" fill="#F2F2F2" />
+                          </svg>
+                        </button>
+                        <ul onMouseLeave={() => setIsDropdownOpen(false)}
+                          className={`${isDropdownOpen === index ? '' : 'hidden'
+                            } absolute right-0 z-10 mt-2 bg-white divide-y divide-gray-100 rounded-lg shadow`}
+                        >
+                          <li>
+                            <button
+                              onClick={() => handleOptionSelect('Inspect', index)}
+                              className="block px-4 py-2 bg-gray-600 hover:bg-gray-500  hover:text-white w-full text-left" > Inspect </button>
+                          </li>
+                          <li>
+                            <button
+                              onClick={() => handleOptionSelect('Delete', index)}
+                              className="block px-4 py-2 bg-gray-600  hover:bg-gray-500 hover:text-white w-full text-left" > Remove Network
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
+
                     </div>
 
                   </div>
+                ))}
+                {/* End */}
 
-                </div>
-                <div className=" flex bg-gray-700 p-4 items-center justify-between" id='1'
-                // onDragStart={(e) => handleDragStart(e, '0')}
-                >
-                  <div className='flex justify-center ml-3 py-2'>
-                    <svg className='ml-2' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                    </svg>
-                    <label className='ml-3 text-white text-md font-semibold'>Network Name</label>
-                  </div>
-
-                  <div className="relative inline-block text-left">
-                    <div className="inline-block relative">
-                      <button
-                        onClick={() => toggleDropdown(2)}
-                        type="button"
-                        name={'option_2'}
-
-                      // className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                      >
-
-                        <svg width="5" height="17" viewBox="0 0 5 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect width="4.04709" height="4.04709" rx="2.02354" fill="#F2F2F2" />
-                          <rect y="6.47754" width="4.04709" height="4.04709" rx="2.02354" fill="#F2F2F2" />
-                          <rect y="12.9531" width="4.04709" height="4.04709" rx="2.02354" fill="#F2F2F2" />
-                        </svg>
-                      </button>
-                      <ul
-                        className={`${isDropdownOpen === 2 ? '' : 'hidden'
-                          } absolute z-10 right-0 mt-2 bg-white divide-y divide-gray-100 rounded-lg shadow`}
-                      >
-                        <li>
-                          <button
-                            onClick={() => handleOptionSelect('Inspect')}
-                            className="block px-4 py-2 bg-gray-600 hover:bg-gray-500  hover:text-white w-full text-left" > Inspect</button>
-                        </li>
-                        <li>
-                          <button
-                            onClick={() => handleOptionSelect('Delete')}
-                            className="block px-4 py-2 bg-gray-600  hover:bg-gray-500 hover:text-white w-full text-left" > Remove Network
-                          </button>
-                        </li>
-                      </ul>
-                    </div>
-
-                  </div>
-
-                </div>
-                <div className=" flex bg-gray-700 p-4 items-center justify-between" id='2'
-                // onDragStart={(e) => handleDragStart(e, '0')}
-                >
-                  <div className='flex justify-center ml-3 py-2'>
-                    <svg className='ml-2' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                    </svg>
-
-                    <label className='ml-3 text-white text-md font-semibold'>Network Name</label>
-                    {/* <p className='text-teal-400 text-sm'> alpine/git</p> */}
-                  </div>
-
-                  <div className="relative inline-block text-left">
-                    <div className="inline-block relative">
-                      <button
-                        onClick={() => toggleDropdown(3)}
-                        name={'option_3'}
-
-                        type="button"
-                      // className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                      >
-
-                        <svg width="5" height="17" viewBox="0 0 5 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect width="4.04709" height="4.04709" rx="2.02354" fill="#F2F2F2" />
-                          <rect y="6.47754" width="4.04709" height="4.04709" rx="2.02354" fill="#F2F2F2" />
-                          <rect y="12.9531" width="4.04709" height="4.04709" rx="2.02354" fill="#F2F2F2" />
-                        </svg>
-                      </button>
-                      <ul onMouseLeave={() => setIsDropdownOpen(false)}
-                        className={`${isDropdownOpen === 3 ? '' : 'hidden'
-                          } absolute right-0 z-10 mt-2 bg-white divide-y divide-gray-100 rounded-lg shadow`}
-                      >
-                        <li>
-                          <button
-                            onClick={() => handleOptionSelect('Inspect')}
-                            className="block px-4 py-2 bg-gray-600 hover:bg-gray-500  hover:text-white w-full text-left" > Inspect</button>
-                        </li>
-                        <li>
-                          <button
-                            onClick={() => handleOptionSelect('Delete')}
-                            className="block px-4 py-2 bg-gray-600  hover:bg-gray-500 hover:text-white w-full text-left" > Remove Network
-                          </button>
-                        </li>
-                      </ul>
-                    </div>
-
-                  </div>
-
-                </div>
               </div>
             }
             {/* Inspect section */}
             {inspectPopup && selectedOption === 'Inspect' &&
               <>
-                <div className='flex justify-center py-2 w-full justify-between'>
-                  <div className='flex items-center'>
-                    <svg onClick={() => setInspectPopup(false)} className='mr-5' width="11" height="18" viewBox="0 0 11 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M10.6091 1.60909L9 0L0 9L9 18L10.6091 16.3909L3.21818 9L10.6091 1.60909Z" fill="white" />
-                    </svg>
+                {netInspectpop.map((x, y) => (
 
-                    <svg className='ml-2' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                    </svg>
+                  < div key={y} >
+                    <div className='flex justify-center py-2 w-full justify-between'>
+                      <div className='flex items-center'>
+                        <svg onClick={() => setInspectPopup(false)} className='mr-5' width="11" height="18" viewBox="0 0 11 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M10.6091 1.60909L9 0L0 9L9 18L10.6091 16.3909L3.21818 9L10.6091 1.60909Z" fill="white" />
+                        </svg>
 
-                    <label className='ml-3 text-white text-md font-semibold'>Network Name </label>
-                  </div>
-                  <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1.11111 17.7778C1.11111 19 2.11111 20 3.33333 20H12.2222C13.4444 20 14.4444 19 14.4444 17.7778V4.44444H1.11111V17.7778ZM15.5556 1.11111H11.6667L10.5556 0H5L3.88889 1.11111H0V3.33333H15.5556V1.11111Z" fill="#76CDB2" />
-                  </svg>
+                        <svg className='ml-2' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
+                        </svg>
 
-                </div>
-                <label className='text-white text-md font-semibold border-b-[2px] border-b-teal-400 mb-3'>Inspect</label>
-                <div className="  bg-white border border-gray-300 rounded-lg shadow-lg p-2 mt-2">
-                  <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                    <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>Path</p>
-                    <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>1.25.2</p>
-                  </div>
-                  <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200  '>
-                    <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>NGINX_VERSION</p>
-                    <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>342343</p>
-                  </div>
-                  <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                    <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>NJS_VERSION</p>
-                    <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>0.8.0</p>
-                  </div>
-                  <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                    <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>pkg_VERSION</p>
-                    <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>1~bookworm</p>
-                  </div>
-                  <h2 className=" font-bold mt-2">Port</h2>
+                        <label className='ml-3 text-white text-md font-semibold'> {x.networkname}</label>
+                      </div>
+                      <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1.11111 17.7778C1.11111 19 2.11111 20 3.33333 20H12.2222C13.4444 20 14.4444 19 14.4444 17.7778V4.44444H1.11111V17.7778ZM15.5556 1.11111H11.6667L10.5556 0H5L3.88889 1.11111H0V3.33333H15.5556V1.11111Z" fill="#76CDB2" />
+                      </svg>
 
-                  <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                    <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>80/tcp</p>
-                    <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>0.0.0.0.:50005</p>
-                  </div>
-                </div>
-              </>}
+                    </div>
+                    <label className='text-white text-md font-semibold border-b-[2px] border-b-teal-400 mb-3'>Inspect</label>
+                    <div className="  bg-white border border-gray-300 rounded-lg shadow-lg p-2 mt-2">
+                      <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                        <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>Path</p>
+                        <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>1.25.2</p>
+                      </div>
+                      <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200  '>
+                        <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>NGINX_VERSION</p>
+                        <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>342343</p>
+                      </div>
+                      <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                        <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>NJS_VERSION</p>
+                        <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>0.8.0</p>
+                      </div>
+                      <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                        <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>pkg_VERSION</p>
+                        <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>1~bookworm</p>
+                      </div>
+                      <h2 className=" font-bold mt-2">Port</h2>
+
+                      <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                        <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>80/tcp</p>
+                        <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>0.0.0.0.:50005</p>
+                      </div>
+                    </div>
+                  </div >
+
+                ))}
+              </>
+            }
           </div>
-        )}
+        )
+        }
 
         {/* Upload folder Section */}
-        {activePopup === 'Uploadpopup' &&
+        {
+          activePopup === 'Uploadpopup' &&
           <div className=" popup  w-3/12 items-center ">
-            {selectedFolder ? (
+            {selectedFolder && selectedFiles || selectedSpecificFile ? (
               <div className=''>
                 <h4 className='text-teal-400  mb-4'>File to Image Conversion</h4>
 
                 <div className='flex'><svg width="19" height="22" viewBox="0 0 19 22" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M14 0H2C0.9 0 0 0.9 0 2V16H2V2H14V0ZM13 4L19 10V20C19 21.1 18.1 22 17 22H5.99C4.89 22 4 21.1 4 20L4.01 6C4.01 4.9 4.9 4 6 4H13ZM12 11H17.5L12 5.5V11Z" fill="#E2E2E2" />
                 </svg>
-                  <label className='text-white ml-2'>{selectedFolder}</label>
+                  {/* <label className='text-white ml-2'>{selectedFolder}</label> */}
                 </div>
                 {/* <p className='text-white'>{webkitRelativePath}</p> */}
                 <p className='text-gray-400 mt-4 text-sm'> Press convert if you want to convert the file into an Image or Cancel if you’re not sure yet</p>
-                {/* <input type="file" webkitdirectory="" onChange={handleFolderChange} /> */}
+                {/* <input type="file" webkitdirectory="" onChange={} /> */}
 
                 <div className='flex justify-center mt-8 '>
                   <button
                     className=" mr-4 bg-teal-400 hover:bg-teal-300 font-bold py-1 px-4 rounded items-center"
-                  // onClick={() => setSelectedFolder(null)}
+                  onClick={convertHandler}
                   >
                     Convert
                   </button>
                   <button
                     className=" bg-gray-400 hover:bg-gray-300 font-bold py-1 px-4 rounded items-center"
-                    onClick={() => setSelectedFolder(null)}
+                    onClick={() => setActivePopup(false)}
                   >
                     Cancel
                   </button></div>
               </div>
             ) : (
               <div className='flex flex-col items-center'>
-                <label className='text-white text-center items-center my-4'>
-                  Upload the file to convert it into an Image
-                </label>
-                <input className="item-center ml-8 my-5" type="file" webkitdirectory="" onChange={handleFolderChange} />
+
+                <label className='text-white text-center items-center my-4' htmlFor="fileInput"> Select a complete folder</label>
+                <input
+                  type="file"
+                  id="fileInput"
+                  webkitdirectory=""
+                  directory=""
+                  multiple={true}
+                  onChange={handleFileUpload}
+                />{selectedFiles.length > 0 && (
+                  <div>
+                    <h3 className='text-white text-center items-center my-4'>Selected Files:</h3>
+                    <ul>
+                      {selectedFiles.map((file, index) => (
+                        <li key={index}>{file.name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <label htmlFor="specificFileInput" className='text-white text-center items-center my-4'>Select a single file</label>
+
+                <input
+                  type="file"
+                  id="specificFileInput"
+                  onChange={handleSpecificFileUpload}
+                />
+
+                {selectedSpecificFile && (
+                  <div>
+                    <h3 className='text-white text-center items-center my-4'>Selected Specific File:</h3>
+                    <p>{selectedSpecificFile.name}</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -574,7 +553,8 @@ export const Home = ({ getDockerData }, props) => {
           </div>
         }
         {/* List of images Section */}
-        {activePopup === 'listImgPopup' &&
+        {
+          activePopup === 'listImgPopup' &&
           <div className="w-full  h-full">
             {/* <button onClick={() => { setPopupCard(true) }} className=' absolute bg-gray-400 px-2 rounded'>show list</button> */}
             {popupCard ?
@@ -582,204 +562,33 @@ export const Home = ({ getDockerData }, props) => {
               <div id='pop1' className="p-2 popup-main  shadow rounded overflow-y-scroll scrollbar  scrollbar-thin  scrollbar-thumb-gray-900 scrollbar-track-gray-500 ">
                 <button onClick={() => { setPopupCard(false) }} className='bg-gray-400 px-2 rounded'>X</button>
                 <div className='flex justify-between items-center  p-2'>
-                  <button 
-                  // onClick={() => { setPopupCard(false) }} 
-                  className='bg-gray-600 hover:bg-gray-500 px-2 w-16 '>All</button>
-                  <button 
-                  // onClick={() => { setPopupCard(false) }} 
-                  className='bg-gray-600 hover:bg-gray-500 px-2 w-16'>Used</button>
-                  <button 
-                  // onClick={() => { setPopupCard(false) }} 
-                  className='bg-gray-600 hover:bg-gray-500 px-2 w-16'>Unused</button>
+                  <button className='bg-gray-600 hover:bg-gray-500 px-2 w-16 '>All</button>
+                  <button className='bg-gray-600 hover:bg-gray-500 px-2 w-16'>Used</button>
+                  <button className='bg-gray-600 hover:bg-gray-500 px-2 w-16'>Unused</button>
                 </div>
+                {/* Popup cards */}
+                {filteredData?.map((x, y) => (
+                  <div key={y} className="drag-card flex justify-between bg-gray-700 p-4 items-center" id='0'
+                    draggable="true"
+                    onDragStart={(e) => handleDragStart(e, y)}
+                  >
+                    <div className='flex '>
+                      <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
+                      </svg>
 
-                <div className="drag-card flex justify-between bg-gray-700 p-4 items-center" id='0'
-                  draggable="true"
-                  onDragStart={(e) => handleDragStart(e, '0')}
-                >
-                  <div className='flex '>
-                    <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                    </svg>
-
-                    <div className='ml-3 py-2'>
-                      <label className='text-white text-md font-semibold'>alpine</label>
-                      <p className='text-teal-400 text-sm'> alpine/git</p>
+                      <div className='ml-3 py-2'>
+                        <label className='text-white text-md font-semibold'>{x.name}</label>
+                        <p className='text-teal-400 text-sm'> alpine/git</p>
+                      </div>
                     </div>
+                    <button type="button" className=" font-semibold bg-teal-400  px-2 text-md  hover:bg-teal-300 rounded-md"
+                      onClick={pushtoHub}
+                    >Push To Hub</button>
                   </div>
-                  <button type="button" className=" font-semibold bg-teal-400  px-2 text-md  hover:bg-teal-300 rounded-md"
-                    onClick={pushtoHub}
-                  >Push To Hub</button>
-                </div>
+                ))}
 
-                <div
-                  className="drag-card flex bg-gray-700 p-4 items-center" id='1'
-                  draggable="true"
-                  onDragStart={(e) => handleDragStart(e, '1')}
-                >
-                  <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                  </svg>
 
-                  <div className='ml-3 py-2'>
-                    <label className='text-white text-md font-semibold'>alpine</label>
-                    <p className='text-teal-400 text-sm'> alpine/git</p>
-                  </div>
-                </div>
-                <div
-                  className="drag-card flex bg-gray-700 p-4 items-center" id='2'
-                  draggable="true"
-                  onDragStart={(e) => handleDragStart(e, '2')}
-                >
-                  <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                  </svg>
-
-                  <div className='ml-3 py-2'>
-                    <label className='text-white text-md font-semibold'>alpine</label>
-                    <p className='text-teal-400 text-sm'> alpine/git</p>
-                  </div>
-                </div>
-                <div
-                  className="drag-card flex bg-gray-700 p-4 items-center" id='3'
-                  draggable="true"
-                  onDragStart={(e) => handleDragStart(e, '3')}
-                >
-                  <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                  </svg>
-
-                  <div className='ml-3 py-2'>
-                    <label className='text-white text-md font-semibold'>alpine</label>
-                    <p className='text-teal-400 text-sm'> alpine/git</p>
-                  </div>
-                </div>
-                <div
-                  className="drag-card flex bg-gray-700 p-4 items-center" id='4'
-                  draggable="true"
-                  onDragStart={(e) => handleDragStart(e, '4')}
-                >
-                  <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                  </svg>
-
-                  <div className='ml-3 py-2'>
-                    <label className='text-white text-md font-semibold'>alpine</label>
-                    <p className='text-teal-400 text-sm'> alpine/git</p>
-                  </div>
-                </div>
-                <div className="drag-card flex bg-gray-700 p-4 " id='5'
-                  draggable="true"
-                  onDragStart={(e) => handleDragStart(e, '5')}
-                >
-                  <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                  </svg>
-
-                  <div className='ml-3 py-2'>
-                    <label className='text-white text-md font-semibold'>alpine</label>
-                    <p className='text-teal-400 text-sm'> alpine/git</p>
-                  </div>
-                </div>
-                <div
-                  className="drag-card flex bg-gray-700 p-4 items-center" id='6'
-                  draggable="true"
-                  onDragStart={(e) => handleDragStart(e, '6')}
-                >
-                  <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                  </svg>
-
-                  <div className='ml-3 py-2'>
-                    <label className='text-white text-md font-semibold'>alpine</label>
-                    <p className='text-teal-400 text-sm'> alpine/git</p>
-                  </div>
-                </div>
-                <div
-                  className="drag-card flex bg-gray-700 p-4 items-center" id='7'
-                  draggable="true"
-                  onDragStart={(e) => handleDragStart(e, '7')}
-                >
-                  <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                  </svg>
-
-                  <div className='ml-3 py-2'>
-                    <label className='text-white text-md font-semibold'>alpine</label>
-                    <p className='text-teal-400 text-sm'> alpine/git</p>
-                  </div>
-                </div>
-                <div
-                  className="drag-card flex bg-gray-700 p-4 items-center" id='8'
-                  draggable="true"
-                  onDragStart={(e) => handleDragStart(e, '8')}
-                >
-                  <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                  </svg>
-
-                  <div className='ml-3 py-2'>
-                    <label className='text-white text-md font-semibold'>alpine</label>
-                    <p className='text-teal-400 text-sm'> alpine/git</p>
-                  </div>
-                </div>
-                <div
-                  className="drag-card flex bg-gray-700 p-4 items-center" id='9'
-                  draggable="true"
-                  onDragStart={(e) => handleDragStart(e, '9')}
-                >
-                  <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                  </svg>
-
-                  <div className='ml-3 py-2'>
-                    <label className='text-white text-md font-semibold'>alpine</label>
-                    <p className='text-teal-400 text-sm'> alpine/git</p>
-                  </div>
-                </div>
-                <div
-                  className="drag-card flex bg-gray-700 p-4 items-center" id='10'
-                  draggable="true"
-                  onDragStart={(e) => handleDragStart(e, '10')}
-                >
-                  <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                  </svg>
-
-                  <div className='ml-3 py-2'>
-                    <label className='text-white text-md font-semibold'>alpine</label>
-                    <p className='text-teal-400 text-sm'> alpine/git</p>
-                  </div>
-                </div>
-                <div
-                  className="drag-card flex bg-gray-700 p-4 items-center" id='11'
-                  draggable="true"
-                  onDragStart={(e) => handleDragStart(e, '11')}
-                >
-                  <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                  </svg>
-
-                  <div className='ml-3 py-2'>
-                    <label className='text-white text-md font-semibold'>alpine</label>
-                    <p className='text-teal-400 text-sm'> alpine/git</p>
-                  </div>
-                </div>
-                <div
-                  className="drag-card flex bg-gray-700 p-4 items-center" id='12'
-                  draggable="true"
-                  onDragStart={(e) => handleDragStart(e, '12')}
-                >
-                  <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                  </svg>
-
-                  <div className='ml-3 py-2'>
-                    <label className='text-white text-md font-semibold'>alpine</label>
-                    <p className='text-teal-400 text-sm'> alpine/git</p>
-                  </div>
-                </div>
-                {/* Add more cards as needed */}
               </div>
 
               : ''
@@ -788,71 +597,78 @@ export const Home = ({ getDockerData }, props) => {
 
             {inspectPopup && selectedOption === 'logs' || selectedOption === 'Inspect' ? (
               <div className='w-11/12 mt-5 m-auto'>
-                <div className='flex justify-center py-2 w-full justify-between'>
-                  <div className='flex items-center'>
-                    <svg onClick={() => setSelectedOption(false)} className='mr-5 cursor-pointer' width="11" height="18" viewBox="0 0 11 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M10.6091 1.60909L9 0L0 9L9 18L10.6091 16.3909L3.21818 9L10.6091 1.60909Z" fill="white" />
-                    </svg>
+                {netInspectpop.map((x, y) => (
+                  <div className='w-11/12 mt-5 m-auto'>
+                    <div className='flex justify-center py-2 w-full justify-between'>
+                      <div className='flex items-center'>
+                        <svg onClick={() => setSelectedOption(false)} className='mr-5 cursor-pointer' width="11" height="18" viewBox="0 0 11 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M10.6091 1.60909L9 0L0 9L9 18L10.6091 16.3909L3.21818 9L10.6091 1.60909Z" fill="white" />
+                        </svg>
 
-                    <svg className='ml-2' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                    </svg>
+                        <svg className='ml-2' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
+                        </svg>
 
-                    <label className='ml-3 text-white text-md font-semibold'>Alipne Name</label>
-                  </div>
-                  <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1.11111 17.7778C1.11111 19 2.11111 20 3.33333 20H12.2222C13.4444 20 14.4444 19 14.4444 17.7778V4.44444H1.11111V17.7778ZM15.5556 1.11111H11.6667L10.5556 0H5L3.88889 1.11111H0V3.33333H15.5556V1.11111Z" fill="#76CDB2" />
-                  </svg>
+                        <label className='ml-3 text-white text-md font-semibold'>{x.name}</label>
+                      </div>
+                      <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1.11111 17.7778C1.11111 19 2.11111 20 3.33333 20H12.2222C13.4444 20 14.4444 19 14.4444 17.7778V4.44444H1.11111V17.7778ZM15.5556 1.11111H11.6667L10.5556 0H5L3.88889 1.11111H0V3.33333H15.5556V1.11111Z" fill="#76CDB2" />
+                      </svg>
 
-                </div>
-                <label onClick={() => setLogsInsSwitch(true)} className='text-white text-md font-semibold border-b-[2px] border-b-teal-400 mb-3 mr-3'>Logs</label>
-                <label onClick={() => setLogsInsSwitch(false)} className='text-white text-md font-semibold border-b-[2px] border-b-teal-400 mb-3'>Inspect</label>
-                {logsInsSwitch ?
-                  <div className="  bg-white border border-gray-300 rounded-lg shadow-lg p-2 mt-2">
-                    <div className=' text-left p-1  mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
                     </div>
-                    <div className=' text-left p-1 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
-                    </div>
-                    <div className=' text-left p-1  mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
-                    </div>
-                    <div className=' text-left p-1 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
-                    </div>
+                    <label onClick={() => setLogsInsSwitch(true)} className='text-white text-md font-semibold border-b-[2px] border-b-teal-400 mb-3 mr-3'>Logs</label>
+                    <label onClick={() => setLogsInsSwitch(false)} className='text-white text-md font-semibold border-b-[2px] border-b-teal-400 mb-3'>Inspect</label>
+                    {logsInsSwitch ?
+                      // Apply map loop here "Start"
+                      <div className="  bg-white border border-gray-300 rounded-lg shadow-lg p-2 mt-2">
+                        <div className=' text-left p-1  mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
+                        </div>
+                        {/* -----End */}
+                        <div className=' text-left p-1 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
+                        </div>
+                        <div className=' text-left p-1  mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
+                        </div>
+                        <div className=' text-left p-1 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
+                        </div>
 
-                  </div>
-                  :
-                  <div className="  bg-white border border-gray-300 rounded-lg shadow-lg p-2 mt-2">
-                    <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>Path </p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>1.25.2</p>
-                    </div>
-                    <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200  '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>NGINX_VERSION</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>342343</p>
-                    </div>
-                    <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>NJS_VERSION</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>0.8.0</p>
-                    </div>
-                    <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>pkg_VERSION</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>1~bookworm</p>
-                    </div>
-                    <h2 className=" font-bold mt-2">Port</h2>
+                      </div>
+                      :
+                      <div className="  bg-white border border-gray-300 rounded-lg shadow-lg p-2 mt-2">
+                        <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>Path </p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>1.25.2</p>
+                        </div>
+                        <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200  '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>NGINX_VERSION</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>342343</p>
+                        </div>
+                        <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>NJS_VERSION</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>0.8.0</p>
+                        </div>
+                        <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>pkg_VERSION</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>1~bookworm</p>
+                        </div>
+                        <h2 className=" font-bold mt-2">Port</h2>
 
-                    <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>80/tcp</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>0.0.0.0.:50005</p>
-                    </div>
-                  </div>}
-              </div>)
+                        <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>80/tcp</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>0.0.0.0.:50005</p>
+                        </div>
+                      </div>}
+                  </div>))
+                }
+              </div>
+            )
               :
               <div className="overflow-hidden flex flex-wrap h-full w-full"
                 onDrop={handleDrop}
@@ -875,13 +691,6 @@ export const Home = ({ getDockerData }, props) => {
                   </div>
                 )}
               </div>}
-
-
-
-
-
-
-
 
             {/* ============================= */}
 
@@ -983,7 +792,8 @@ export const Home = ({ getDockerData }, props) => {
         }
         {/* Containers Section */}
 
-        {activePopup === 'containers' &&
+        {
+          activePopup === 'containers' &&
           < div className='w-full flex flex-wrap overflow-y-scroll scrollbar  scrollbar-thin  scrollbar-thumb-gray-900 scrollbar-track-gray-500 justify-between  p-3 '>
             <h2 className=" font-bold mt-2 text-teal-300 border-b-[2px]  border-b-teal-200 w-full ">Containers Mapping</h2>
 
@@ -991,73 +801,75 @@ export const Home = ({ getDockerData }, props) => {
             {/* Containers Section  logs*/}
 
             {inspectPopup && selectedOption === 'logs' || selectedOption === 'Inspectc' ? (
-              <div className='w-11/12 mt-5 m-auto'>
-                <div className='flex justify-center py-2 w-full justify-between'>
-                  <div className='flex items-center'>
-                    <svg onClick={() => setSelectedOption(false)} className='mr-5 cursor-pointer' width="11" height="18" viewBox="0 0 11 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M10.6091 1.60909L9 0L0 9L9 18L10.6091 16.3909L3.21818 9L10.6091 1.60909Z" fill="white" />
-                    </svg>
+              <>
+                {netInspectpop?.map((x, y) => (
+                  <div className='w-11/12 mt-5 m-auto'>
+                    <div className='flex justify-center py-2 w-full justify-between'>
+                      <div className='flex items-center'>
+                        <svg onClick={() => setSelectedOption(false)} className='mr-5 cursor-pointer' width="11" height="18" viewBox="0 0 11 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M10.6091 1.60909L9 0L0 9L9 18L10.6091 16.3909L3.21818 9L10.6091 1.60909Z" fill="white" />
+                        </svg>
 
-                    <svg className='ml-2' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
-                    </svg>
+                        <svg className='ml-2' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path fillRule="evenodd" clipRule="evenodd" d="M19.5405 0.196731C20.1534 -0.0655785 20.8466 -0.0655768 21.4595 0.196735C24.5565 1.52222 27.6536 2.80552 30.7507 4.08882C33.6765 5.30113 36.6023 6.51345 39.528 7.76134C40.4218 8.14256 41 9.02386 41 9.99822V24.0018C41 24.9761 40.4218 25.8574 39.528 26.2387C36.6019 27.4868 33.6756 28.6993 30.7493 29.9118C27.6526 31.1949 24.556 32.478 21.4595 33.8033C20.8466 34.0656 20.1534 34.0656 19.5405 33.8033C16.4435 32.4778 13.3464 31.1945 10.2492 29.9111C7.32343 28.6988 4.39764 27.4865 1.47196 26.2387C0.578183 25.8574 0 24.9761 0 24.0018V9.99821C0 9.02385 0.578178 8.14256 1.47195 7.76134C4.39814 6.51323 7.32444 5.30071 10.2508 4.08818C13.3474 2.80509 16.444 1.522 19.5405 0.196731ZM36.4445 12.1841C36.4445 11.5132 36.9883 10.9693 37.6593 10.9693C38.3302 10.9693 38.8741 11.5132 38.8741 12.1841V23.4658C38.8741 24.1367 38.3302 24.6806 37.6593 24.6806C36.9883 24.6806 36.4445 24.1367 36.4445 23.4658V12.1841ZM33.1037 12.7974C32.4328 12.7974 31.8889 13.3413 31.8889 14.0122V25.2939C31.8889 25.9648 32.4328 26.5087 33.1037 26.5087C33.7747 26.5087 34.3185 25.9648 34.3185 25.2939V14.0122C34.3185 13.3413 33.7747 12.7974 33.1037 12.7974ZM27.3333 15.8404C27.3333 15.1695 27.8772 14.6256 28.5481 14.6256C29.2191 14.6256 29.7629 15.1695 29.7629 15.8404V27.1221C29.7629 27.793 29.2191 28.3369 28.5481 28.3369C27.8772 28.3369 27.3333 27.793 27.3333 27.1221V15.8404ZM22.4741 17.6685C22.4741 16.9976 23.018 16.4537 23.6889 16.4537C24.3598 16.4537 24.9037 16.9976 24.9037 17.6685V28.9502C24.9037 29.6211 24.3598 30.165 23.6889 30.165C23.018 30.165 22.4741 29.6211 22.4741 28.9502V17.6685Z" fill="#76CDB2" />
+                        </svg>
 
-                    <label className='ml-3 text-white text-md font-semibold'>Alipne Name</label>
+                        <label className='ml-3 text-white text-md font-semibold'>{x.name}</label>
+                      </div>
+                      <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1.11111 17.7778C1.11111 19 2.11111 20 3.33333 20H12.2222C13.4444 20 14.4444 19 14.4444 17.7778V4.44444H1.11111V17.7778ZM15.5556 1.11111H11.6667L10.5556 0H5L3.88889 1.11111H0V3.33333H15.5556V1.11111Z" fill="#76CDB2" />
+                      </svg>
+
+                    </div>
+                    <label onClick={() => setLogsInsSwitch(true)} className='text-white text-md font-semibold border-b-[2px] border-b-teal-400 mb-3 mr-3'>Logs</label>
+                    <label onClick={() => setLogsInsSwitch(false)} className='text-white text-md font-semibold border-b-[2px] border-b-teal-400 mb-3'>Inspect</label>
+                    {logsInsSwitch ?
+                      <div className="  bg-white border border-gray-300 rounded-lg shadow-lg p-2 mt-2">
+                        <div className=' text-left p-1  mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
+                        </div>
+                        <div className=' text-left p-1 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
+                        </div>
+                        <div className=' text-left p-1  mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
+                        </div>
+                        <div className=' text-left p-1 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
+                        </div>
+
+                      </div>
+                      :
+                      <div className="  bg-white border border-gray-300 rounded-lg shadow-lg p-2 mt-2">
+                        <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>Path </p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>1.25.2</p>
+                        </div>
+                        <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200  '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>NGINX_VERSION</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>342343</p>
+                        </div>
+                        <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>NJS_VERSION</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>0.8.0</p>
+                        </div>
+                        <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>pkg_VERSION</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>1~bookworm</p>
+                        </div>
+                        <h2 className=" font-bold mt-2">Port</h2>
+
+                        <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
+                          <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>80/tcp</p>
+                          <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>0.0.0.0.:50005</p>
+                        </div>
+                      </div>}
                   </div>
-                  <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1.11111 17.7778C1.11111 19 2.11111 20 3.33333 20H12.2222C13.4444 20 14.4444 19 14.4444 17.7778V4.44444H1.11111V17.7778ZM15.5556 1.11111H11.6667L10.5556 0H5L3.88889 1.11111H0V3.33333H15.5556V1.11111Z" fill="#76CDB2" />
-                  </svg>
-
-                </div>
-                <label onClick={() => setLogsInsSwitch(true)} className='text-white text-md font-semibold border-b-[2px] border-b-teal-400 mb-3 mr-3'>Logs</label>
-                <label onClick={() => setLogsInsSwitch(false)} className='text-white text-md font-semibold border-b-[2px] border-b-teal-400 mb-3'>Inspect</label>
-                {logsInsSwitch ?
-                  <div className="  bg-white border border-gray-300 rounded-lg shadow-lg p-2 mt-2">
-                    <div className=' text-left p-1  mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
-                    </div>
-                    <div className=' text-left p-1 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
-                    </div>
-                    <div className=' text-left p-1  mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
-                    </div>
-                    <div className=' text-left p-1 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>4/8/2020 2:20:55</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>User-001 192.168.10.10 GET https://encyclopedia.com/</p>
-                    </div>
-
-                  </div>
-                  :
-                  <div className="  bg-white border border-gray-300 rounded-lg shadow-lg p-2 mt-2">
-                    <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>Path </p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>1.25.2</p>
-                    </div>
-                    <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200  '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>NGINX_VERSION</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>342343</p>
-                    </div>
-                    <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>NJS_VERSION</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>0.8.0</p>
-                    </div>
-                    <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>pkg_VERSION</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>1~bookworm</p>
-                    </div>
-                    <h2 className=" font-bold mt-2">Port</h2>
-
-                    <div className=' text-left p-1 py-2 mx-2 flex  border-b-[2px]  border-b-gray-200   '>
-                      <p className='cursor-pointer text-sbase font-semibold w-52 text-gray-700'>80/tcp</p>
-                      <p className='cursor-pointer text-sbase  text-gray-700 flex items-center'>0.0.0.0.:50005</p>
-                    </div>
-                  </div>}
-              </div>
-
+                ))} </>
             )
               :
               <>
@@ -1078,12 +890,12 @@ export const Home = ({ getDockerData }, props) => {
                         >
                           <li>
                             <button
-                              onClick={() => handlecontainer('Inspectc')}
+                              onClick={() => handlecontainer('Inspectc', index)}
                               className="block px-4 py-2 bg-gray-600 hover:bg-gray-500  hover:text-white w-full text-left" > Inspect </button>
                           </li>
                           <li>
                             <button
-                              onClick={() => handlecontainer('logs')}
+                              onClick={() => handlecontainer('logs', index)}
                               className="block px-4 py-2 bg-gray-600  hover:bg-gray-500 hover:text-white w-full text-left" > logs
                             </button>
                           </li>
@@ -1131,7 +943,8 @@ export const Home = ({ getDockerData }, props) => {
 
 
         {/* IMport Image */}
-        {activePopup === 'importImgPopup' &&
+        {
+          activePopup === 'importImgPopup' &&
           < div className='w-full  overflow-y-scroll scrollbar  scrollbar-thin  scrollbar-thumb-gray-900 scrollbar-track-gray-500'>
             <div className=" flex flex-col justify-between items-center  w-full  pt-6 pointer-events">
               <div className="relative w-10/12 flex justify-between ">
@@ -1150,7 +963,7 @@ export const Home = ({ getDockerData }, props) => {
             </div>
 
             <div className='flex flex-col justify-center items-center '>
-              {filteredData.map((x, y) => (
+              {filteredData?.map((x, y) => (
                 <div key={y} style={{ backgroundColor: '#17222A' }} className="flex w-11/12 items-center justify-between p-2 my-4 pointer-events">
                   <div className='flex justify-center items-center'>
                     <svg className='ml-3' width="41" height="34" viewBox="0 0 41 34" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1169,12 +982,13 @@ export const Home = ({ getDockerData }, props) => {
           </div>
         }
 
-        {!activePopup &&
+        {
+          !activePopup &&
           < p className='text-gray-700 text-6xl font-bold pt-16'>Welcome to Dockur</p>
         }
 
 
-      </div>
+      </div >
     </div >
 
   )
